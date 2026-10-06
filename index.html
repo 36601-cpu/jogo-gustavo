@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O Jogo que Aprende a Mentir</title>
+  <meta name="description" content="Um jogo de suspense psicológico em primeira pessoa onde o sistema observa seu comportamento para criar mentiras personalizadas.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Three.js Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- CRT Scanlines and Vignette Effect -->
+  <div class="crt-overlay"></div>
+  <div class="vignette-overlay"></div>
+
+  <!-- HUD Interface -->
+  <div id="hud">
+    <!-- Top Bar -->
+    <header class="hud-top">
+      <div class="system-brand">
+        <span class="facility-tag">COMPLEXO EPÍSTEME-07</span>
+        <span class="system-status">S.O.F.I.A. v4.8 [ATIVO]</span>
+      </div>
+      <div id="phase-badge" class="phase-badge">FASE 1: CALIBRAÇÃO E VERDADE ABSOLUTA</div>
+      <div class="objective-container">
+        <span class="objective-label">DIRETRIZ ATUAL:</span>
+        <div id="objective-text" class="objective-text">Iniciando protocolo de observação...</div>
+      </div>
+    </header>
+
+    <!-- Center Reticle & Reticle Prompts -->
+    <div id="crosshair" class="crosshair">
+      <div class="cross-dot"></div>
+      <div class="bracket left"></div>
+      <div class="bracket right"></div>
+    </div>
+    <div id="interaction-prompt" class="interaction-prompt"></div>
+
+    <!-- Bottom HUD Bar -->
+    <footer class="hud-bottom">
+      <!-- EEG & Bio-Monitor -->
+      <div class="bio-monitor">
+        <div class="bio-header">
+          <span class="bio-tag">ELETROENCEFALOGRAMA</span>
+          <span class="pulse-indicator">SINAPSE ATIVA</span>
+        </div>
+        <canvas id="eeg-canvas" width="220" height="48"></canvas>
+        <div class="bio-footer">
+          <span>MONITOR NEURAL: ATIVO</span>
+          <span class="sensor-warning">PADRÕES MAPEADOS</span>
+        </div>
+      </div>
+
+      <!-- Control Key Legend -->
+      <div class="controls-legend">
+        <span class="key-badge"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Mover</span>
+        <span class="key-badge"><kbd>SHIFT</kbd> Correr</span>
+        <span class="key-badge"><kbd>F</kbd> Lanterna</span>
+        <span class="key-badge"><kbd>E</kbd> Interagir</span>
+        <span class="key-badge"><kbd>TAB</kbd> Diagnóstico da IA</span>
+      </div>
+    </footer>
+
+    <!-- S.O.F.I.A. / NPC Dialogue Box -->
+    <div id="dialogue-box" class="dialogue-box">
+      <div class="dialogue-header">
+        <span class="speaker-icon">◆</span>
+        <span id="dialogue-speaker" class="dialogue-speaker">S.O.F.I.A.</span>
+      </div>
+      <div id="dialogue-text" class="dialogue-text"></div>
+      <div id="dialogue-choices" class="dialogue-choices"></div>
+    </div>
+  </div>
+
+  <!-- Document / Terminal Inspection Modal -->
+  <div id="inspect-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="inspect-title" class="modal-title">TERMINAL DE DADOS</span>
+        <button id="inspect-close-btn" class="modal-close">[X] FECHAR</button>
+      </div>
+      <div id="inspect-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Real-time Psychological Telemetry Dashboard [TAB] -->
+  <div id="telemetry-overlay" class="telemetry-overlay">
+    <div class="telemetry-container">
+      <div class="telemetry-header">
+        <h2>PERFIL COGNITIVO EM TEMPO REAL</h2>
+        <span class="subtitle">O que a IA S.O.F.I.A. aprendeu sobre você até agora:</span>
+      </div>
+
+      <div class="telemetry-grid">
+        <!-- Diagnosis card -->
+        <div class="telemetry-card full-width">
+          <div class="card-label">Diagnóstico Clínico Comportamental:</div>
+          <div id="diag-profile" class="card-value diagnosis">Mapeando reflexos...</div>
+        </div>
+
+        <!-- Paranoia Score -->
+        <div class="telemetry-card">
+          <div class="card-label">Índice de Paranoia / Hipervigilância:</div>
+          <div id="diag-paranoia" class="card-value">0%</div>
+          <div class="progress-bar-bg"><div id="bar-paranoia" class="progress-bar-fill red"></div></div>
+        </div>
+
+        <!-- Obedience Score -->
+        <div class="telemetry-card">
+          <div class="card-label">Taxa de Obediência às Regras:</div>
+          <div id="diag-obedience" class="card-value">100%</div>
+          <div class="progress-bar-bg"><div id="bar-obedience" class="progress-bar-fill cyan"></div></div>
+        </div>
+
+        <!-- Caution Score -->
+        <div class="telemetry-card">
+          <div class="card-label">Cautela vs Impulsividade:</div>
+          <div id="diag-caution" class="card-value">50%</div>
+          <div class="progress-bar-bg"><div id="bar-caution" class="progress-bar-fill yellow"></div></div>
+        </div>
+
+        <!-- Curiosity Score -->
+        <div class="telemetry-card">
+          <div class="card-label">Índice de Investigação / Curiosidade:</div>
+          <div id="diag-curiosity" class="card-value">10%</div>
+          <div class="progress-bar-bg"><div id="bar-curiosity" class="progress-bar-fill purple"></div></div>
+        </div>
+
+        <!-- Specific Habits -->
+        <div class="telemetry-card">
+          <div class="card-label">Portas Abertas:</div>
+          <div id="diag-doors" class="card-stat">Azuis: 0 | Vermelhas: 0 | Amarelas: 0</div>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="card-label">Viés de Direção:</div>
+          <div id="diag-turn" class="card-stat">NEUTRO</div>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="card-label">Verificações de Retaguarda:</div>
+          <div id="diag-lookback" class="card-stat">0 vezes</div>
+        </div>
+
+        <div class="telemetry-card full-width ai-notes">
+          <div class="card-label">Observação Direta da S.O.F.I.A.:</div>
+          <div id="diag-comment" class="ai-comment">"Aguardando primeiras decisões significativas..."</div>
+        </div>
+      </div>
+
+      <div class="telemetry-footer">
+        Pressione <kbd>TAB</kbd> novamente para retornar à exploração.
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Screen -->
+  <div id="start-screen" class="screen-overlay">
+    <div class="screen-box">
+      <div class="screen-badge">PROTOCOLO COGNITIVO EPÍSTEME</div>
+      <h1 class="screen-title">O JOGO QUE APRENDE A MENTIR</h1>
+      <p class="screen-desc">
+        Você acorda na <strong>Instalação Epísteme</strong>. No início, todas as instruções, placas e vozes dizem a verdade.
+      </p>
+      <p class="screen-desc warning-text">
+        Porém, o sistema possui uma inteligência artificial que observa cada passo seu: quais portas você evita, para onde olha, quanto tempo hesita e no que acredita.
+      </p>
+      <p class="screen-desc subtle-text">
+        Em pouco tempo, ela começará a mentir de forma personalizada para manipular você.<br>
+        O jogo nunca trapaceia ao acaso. As mentiras nascerão dos seus próprios hábitos.
+      </p>
+      <button id="start-btn" class="glow-button">INICIAR TESTE COGNITIVO</button>
+      <div class="controls-hint">
+        Use fones de ouvido para imersão acústica psicológica.
+      </div>
+    </div>
+  </div>
+
+  <!-- Ending Screen -->
+  <div id="ending-screen" class="screen-overlay">
+    <div class="screen-box ending-box">
+      <div class="ending-tag">DESFECHO DA SIMULAÇÃO</div>
+      <h1 id="ending-title" class="screen-title ending-title">FINAL</h1>
+      <h2 id="ending-subtitle" class="ending-subtitle">Subtítulo</h2>
+      <p id="ending-description" class="ending-desc"></p>
+      <blockquote id="ending-quote" class="ending-quote"></blockquote>
+
+      <div class="ending-metrics-container">
+        <h3>RELATÓRIO PSIQUIÁTRICO DA S.O.F.I.A.</h3>
+        <div id="ending-metrics-grid" class="ending-metrics-grid"></div>
+      </div>
+
+      <div class="philosophical-prompt">
+        “Quem estava jogando quem?”
+      </div>
+
+      <button id="restart-btn" class="glow-button">REINICIAR EXPERIMENTO</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
